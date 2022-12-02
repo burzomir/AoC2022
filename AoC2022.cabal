@@ -29,7 +29,7 @@ executable AoC2022
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
-  build-depends:    base ^>=4.17.0.0
+  build-depends:    base
   hs-source-dirs:   app
   default-language: Haskell2010
 
@@ -48,5 +48,15 @@ executable Day0102
     , base
     , split
     , ilist
+  hs-source-dirs:   app
+  default-language: Haskell2010
+
+executable Day0201
+  main-is:          Day02/Day0201.hs
+  build-depends:
+    , base
+    , split
+    , ilist
+    , parsec
   hs-source-dirs:   app
   default-language: Haskell2010

@@ -3,9 +3,10 @@
 
 module Main where
 
-import Text.Parsec
+import Text.Parsec ( char, (<|>), Parsec )
 import Prelude hiding (round)
-import Helpers
+import Helpers ( parseInputFile )
+import Data.Function ( (&) )
 
 data Shape
     = Rock
@@ -13,10 +14,10 @@ data Shape
     | Scissors
     deriving (Show)
 
-data Result
-    = Lost
+data ExpectedResult
+    = Lose
     | Draw
-    | Won
+    | Win
     deriving (Show)
 
 data Player
@@ -25,33 +26,36 @@ data Player
 
 data Move p = Move Shape deriving (Show)
 
-data Round = Round (Move Opponent) (Move Player) Result deriving (Show)
+data Round = Round (Move Opponent) ExpectedResult (Move Player) deriving (Show)
 
-result :: Move Opponent -> Move Player -> Result
-result (Move Rock) (Move Paper) = Won
-result (Move Paper) (Move Scissors) = Won
-result (Move Scissors) (Move Rock) = Won
-result (Move Rock) (Move Rock) = Draw
-result (Move Paper) (Move Paper) = Draw
-result (Move Scissors) (Move Scissors) = Draw
-result _ _ = Lost
+choseMove :: Move Opponent -> ExpectedResult -> Move Player
+choseMove (Move Rock) Lose = Move Scissors
+choseMove (Move Rock) Draw = Move Rock
+choseMove (Move Rock) Win = Move Paper
+choseMove (Move Paper) Lose = Move Rock
+choseMove (Move Paper) Draw = Move Paper
+choseMove (Move Paper) Win = Move Scissors
+choseMove (Move Scissors) Lose = Move Paper
+choseMove (Move Scissors) Draw = Move Scissors
+choseMove (Move Scissors) Win = Move Rock
 
-playerMove :: Parsec String u (Move Player)
-playerMove = (char 'X' >> return (Move Rock))
-          <|> (char 'Y' >> return (Move Paper))
-          <|> (char 'Z' >> return (Move Scissors))
 
-opponentMove :: Parsec String u (Move Opponent)
-opponentMove = (char 'A' >> return (Move Rock))
+opponentMoveParser :: Parsec String u (Move Opponent)
+opponentMoveParser = (char 'A' >> return (Move Rock))
             <|> (char 'B' >> return (Move Paper))
             <|> (char 'C' >> return (Move Scissors))
 
-round :: Parsec String u Round
-round = do
-    opponent <- opponentMove
+expectedResultParser :: Parsec String u (ExpectedResult)
+expectedResultParser = (char 'X' >> return Lose)
+          <|> (char 'Y' >> return Draw)
+          <|> (char 'Z' >> return Win)
+
+roundParser :: Parsec String u Round
+roundParser = do
+    opponentMove <- opponentMoveParser
     char ' '
-    player <- playerMove
-    return (Round opponent player (result opponent player))
+    expectedResult <- expectedResultParser
+    return (Round opponentMove expectedResult (choseMove opponentMove expectedResult))
 
 class Score a where
     score :: a -> Int
@@ -61,15 +65,17 @@ instance Score Shape where
     score Paper = 2
     score Scissors = 3
 
-instance Score Result where
-    score Lost = 0
+instance Score ExpectedResult where
+    score Lose = 0
     score Draw = 3
-    score Won = 6
-
+    score Win = 6
 instance Score Round where
-    score (Round _ (Move p) r) = score p + score r
+    score (Round _ (r) (Move p)) =  score r + score p
 
 main :: IO ()
 main = do
-  input <- parseInputFile round "app/Day02/Input.txt"
-  print $ (fmap sum) $ (fmap . fmap) score input
+  input <- parseInputFile roundParser "app/Day02/Input.txt"
+  input
+    & (fmap . fmap ) score
+    & fmap sum
+    & print

@@ -227,3 +227,17 @@ executable Day0802
 
   hs-source-dirs:   app
   default-language: Haskell2010
+
+executable Day0901
+  main-is:          Day09/Day0901.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+
+  hs-source-dirs:   app
+  default-language: Haskell2010

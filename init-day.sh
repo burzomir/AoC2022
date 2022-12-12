@@ -34,6 +34,7 @@ executable Day$101
     , search-algorithms
   hs-source-dirs:   app
   default-language: Haskell2010
+  ghc-options: -Wall -Werror
 
 executable Day$102
   main-is:          Day$1/Day$102.hs
@@ -49,6 +50,7 @@ executable Day$102
     , search-algorithms
   hs-source-dirs:   app
   default-language: Haskell2010
+  ghc-options: -Wall -Werror
 
 EOF
 

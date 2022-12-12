@@ -320,3 +320,20 @@ executable Day1102
 
   hs-source-dirs:   app
   default-language: Haskell2010
+
+executable Day1201
+  main-is:          Day12/Day1201.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+    , transformers
+    , search-algorithms
+    
+
+  hs-source-dirs:   app
+  default-language: Haskell2010

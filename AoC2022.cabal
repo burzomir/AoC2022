@@ -388,3 +388,36 @@ executable Day1302
   default-language: Haskell2010
   ghc-options: -Wall -Werror
 
+
+executable Day1401
+  main-is:          Day14/Day1401.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+    , transformers
+    , search-algorithms
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  ghc-options: -Wall -Werror
+
+executable Day1402
+  main-is:          Day14/Day1402.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+    , transformers
+    , search-algorithms
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  ghc-options: -Wall -Werror
+

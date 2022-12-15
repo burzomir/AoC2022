@@ -68,6 +68,7 @@ overlap' (r1:r2:rs) =
   case overlap r1 r2 of
     [r] -> overlap' (r:rs)
     [r1', r2'] -> r1' : overlap' (r2':rs)
+    _ -> error "overlap'"
 
 overlap'' :: [Range] -> [Range]
 overlap'' ranges = overlap' $ sort ranges

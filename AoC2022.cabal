@@ -456,3 +456,36 @@ executable Day1502
   ghc-options: -Wall -Werror
 
 
+
+executable Day1601
+  main-is:          Day16/Day1601.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+    , transformers
+    , search-algorithms
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  ghc-options: -Wall -Werror
+
+executable Day1602
+  main-is:          Day16/Day1602.hs
+  build-depends:
+    , AoC2022
+    , base
+    , ilist
+    , parsec
+    , split
+    , containers
+    , vector
+    , transformers
+    , search-algorithms
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  ghc-options: -Wall -Werror
+

@@ -471,7 +471,6 @@ executable Day1601
     , search-algorithms
   hs-source-dirs:   app
   default-language: Haskell2010
-  ghc-options: -Wall -Werror
 
 executable Day1602
   main-is:          Day16/Day1602.hs
@@ -487,5 +486,4 @@ executable Day1602
     , search-algorithms
   hs-source-dirs:   app
   default-language: Haskell2010
-  ghc-options: -Wall -Werror
 

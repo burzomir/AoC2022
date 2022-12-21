@@ -4,14 +4,11 @@ import Text.Parsec
 import File
 import qualified Data.Map as Map
 import Algorithm.Search (dijkstra)
-import Prelude hiding (lookup)
-import Data.Maybe (fromMaybe)
+import Prelude hiding (lookup, and, map)
+import Data.Maybe (isJust)
 import Data.Either (fromRight)
-import Data.List (sortOn, (\\))
-import Data.Ord (Down(..))
+import Data.List (find)
 import Debug.Trace
-import qualified Data.Set as Set
-
 
 -- VALVE
 
@@ -26,7 +23,7 @@ valveRate (Valve _ rate _) = rate
 valveTunnels :: Valve -> Tunnels
 valveTunnels (Valve _ _ tunnels) = tunnels
 
-valveOpeningCost = 1
+tunnelMoveCost :: Int
 tunnelMoveCost = 1
 
 type Name = String
@@ -35,11 +32,11 @@ type Tunnels = [Name]
 
 valveParser :: Parsec String () Valve
 valveParser = do
-  string "Valve "
+  _ <- string "Valve "
   name <- many1 letter
-  string " has flow rate="
+  _ <- string " has flow rate="
   rate <- many1 digit
-  (try $ string "; tunnel leads to valve ") <|> (try $ string "; tunnels lead to valves ")
+  _ <- (try $ string "; tunnel leads to valve ") <|> (try $ string "; tunnels lead to valves ")
   tunnels <- many1 letter `sepBy` string ", "
   return $ Valve name (read rate) tunnels
 
@@ -95,7 +92,6 @@ removeBrokenValves valveMap travelCostMap =
                 Nothing -> False
     in Map.filterWithKey workingTargetValve travelCostMap
 
-
 neighbourTravelCosts :: Name -> TravelCostMap -> [(Name, Int)]
 neighbourTravelCosts start travelCostMap =
     fmap (\ ((_, to), cost) -> (to, cost)) $ Map.assocs $ Map.filterWithKey (\ (from, _) _ -> from == start) travelCostMap
@@ -106,76 +102,29 @@ travelCost from to costMap =
 
 -- SOLUTION
 
-data MyState = MyState 
-    { valvesMap :: ValveMap
-    , travelCostMap :: TravelCostMap
-    , currentValve :: Name
-    , timeLeft :: Int
-    , openedValves :: Set.Set Name 
-    , totalReleasedPressure :: Int
-    } deriving (Eq, Ord)
+trace' :: Show a => a -> a
+trace' x = trace (show x) x
 
-instance Show MyState where
-    show state = show (currentValve state, timeLeft state, openedValves state, totalReleasedPressure state)
+and :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+and f1 f2 = (&&) <$> f1 <*> f2
 
-myState :: ValveMap -> Name -> Int -> MyState
-myState valvesMap currentValve timeLeft =
-    let travelCostMap = removeBrokenValves valvesMap $ createTravelCostMap valvesMap
-    in MyState valvesMap travelCostMap currentValve timeLeft Set.empty 0
+generatePaths :: ValveMap -> TravelCostMap -> Name -> [(Name, Int)] -> Int -> [[(Name, Int)]]
+generatePaths valveMap costMap valve path timeLeft =
+    let timeRemaining cost = timeLeft - cost - 1
+        reachable (_, cost) =  timeRemaining cost >= 0
+        onPath (valve', _) = isJust $ find (\ (valve'', _) -> valve' == valve'') path
+        nextValves = filter (reachable `and` (not . onPath)) $ neighbourTravelCosts valve costMap
+        nextPath = path ++  [(valve, timeLeft * (getRate valveMap valve))]
+        handleNextValve (nextValve, cost) = generatePaths valveMap costMap nextValve nextPath (timeRemaining cost)
+    in if length nextValves == 0
+        then [nextPath]
+        else concat $ fmap handleNextValve nextValves
 
-allOpen :: MyState -> Bool
-allOpen state =
-    let workingValves = Set.fromList $ fmap snd $ Map.keys $ travelCostMap state
-    in workingValves == (openedValves state)
-
-timeout :: MyState -> Bool
-timeout state = timeLeft state <= 0
-
-unreleasedPressure :: MyState -> Int
-unreleasedPressure state =
-    let closedValves = filter (\ valve -> not (valveName valve `Set.member` openedValves state)) $ Map.elems (valvesMap state)
-    in sum $ fmap valveRate closedValves
-
-releasedPressure :: MyState -> Int
-releasedPressure state =
-    sum $ fmap (getRate (valvesMap state)) $ Set.toList (openedValves state)
-
-timeToOpen :: Name -> MyState -> Int
-timeToOpen valve state =
-    let openingCost = if valve `elem` (openedValves state) then 0 else 1
-        infinity = (maxBound :: Int)
-        travelCost = fromMaybe infinity $ Map.lookup (currentValve state, valve) (travelCostMap state)
-    in (openingCost + travelCost)
-
-openValve :: MyState -> Name  -> MyState
-openValve state nextValve =
-    let newState = state { currentValve = nextValve
-          , timeLeft = (timeLeft state - timeToOpen nextValve state) 
-          , openedValves = Set.insert nextValve (openedValves state)
-          , totalReleasedPressure = (totalReleasedPressure state) + ((releasedPressure state) * (timeToOpen nextValve state))
-          }
-    in trace (show newState) newState
-
-nextValves :: MyState -> [Name]
-nextValves state =
-    fmap snd $ filter (\(from, _) -> from == currentValve state) $ Map.keys $ travelCostMap state
-
-nextStates :: MyState -> [MyState]
-nextStates state =
-    fmap (openValve state) (nextValves state)
-
-cost :: MyState -> MyState -> Int
-cost from to =
-    (timeToOpen (currentValve to) from) * (unreleasedPressure from)
-
-
+main :: IO ()
 main = do
     input <- parseFile inputParser "app/Day16/Input.txt"
     let valves =  fromRight [] input
     let valvesMap = fromList valves
-    let state = myState valvesMap "AA" 30
-    let optimalPath = dijkstra nextStates cost ((||) <$> allOpen <*> timeout) state
-    let finalState = fmap ( head . reverse . snd) optimalPath
-    let total = fmap ((\ state -> totalReleasedPressure state + (timeLeft state * releasedPressure state))) finalState
-    print total
+    let costMap = removeBrokenValves valvesMap $ createTravelCostMap valvesMap
+    print $ maximum $ fmap sum $ (fmap . fmap) snd $ generatePaths valvesMap costMap "AA" [] 30
     
